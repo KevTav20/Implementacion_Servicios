@@ -1,7 +1,22 @@
 const express = require("express");
 const router = express.Router();
+
+const BrandsService = require("../services/brandsService");
+const CategoriesService = require("../services/categoriesService");
 const ProductsService = require("../services/productsService");
-const service = new ProductsService();
+
+// 1. Crear instancias
+const brandsService = new BrandsService();
+const categoriesService = new CategoriesService();
+
+// 2. Crear el servicio de productos inyectando brands y categories
+const productsService = new ProductsService(brandsService, categoriesService);
+
+// 3. Inyectar productsService en categories para validación en delete
+categoriesService.injectProductsService(productsService);
+
+// Shortcut para usar productsService dentro del router
+const service = productsService;
 
 /**
  * @swagger

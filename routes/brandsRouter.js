@@ -1,11 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const ProductsService = require('../services/productsService');
-const productsService = new ProductsService();
+const BrandsService = require("../services/brandsService");
+const ProductsService = require("../services/productsService");
+const CategoriesService = require("../services/categoriesService");
 
-const BrandsService = require('../services/brandsService');
-const service = new BrandsService(productsService);
+// 1. Instanciar services sin dependencias circulares
+const brandsService = new BrandsService();
+const categoriesService = new CategoriesService();
+
+// 2. Products recibe marcas y categorías
+const productsService = new ProductsService(brandsService, categoriesService);
+
+// 3. Inyectar productsService en brands y categories
+brandsService.injectProductsService(productsService);
+categoriesService.injectProductsService(productsService);
 
 /**
  * @swagger

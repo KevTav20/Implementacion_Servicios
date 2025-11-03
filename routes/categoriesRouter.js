@@ -1,12 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const ProductsService = require('../services/productsService');
-const productsService = new ProductsService();
+const CategoriesService = require("../services/categoriesService");
+const BrandsService = require("../services/brandsService");
+const ProductsService = require("../services/productsService");
 
-const CategoriesService = require('../services/categoriesService');
-const service = new CategoriesService(productsService);
+// 1. Crear instancias principales
+const brandsService = new BrandsService();
+const categoriesService = new CategoriesService();
 
+// 2. Crear ProductsService con brands y categories (inyección de dependencias)
+const productsService = new ProductsService(brandsService, categoriesService);
+
+// 3. Inyectar ProductsService en brands y categories
+brandsService.injectProductsService(productsService);
+categoriesService.injectProductsService(productsService);
 /**
  * @swagger
  * tags:

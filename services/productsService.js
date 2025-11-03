@@ -1,7 +1,10 @@
 const { faker } = require("@faker-js/faker");
 
 class ProductsService {
-    constructor() {
+    constructor(brandsService, categoriesService) {
+        this.brandsService = brandsService;
+        this.categoriesService = categoriesService;
+
         this.products = [];
         this.generate();
     }
@@ -15,7 +18,7 @@ class ProductsService {
                 price: parseFloat(faker.commerce.price()),
                 image: faker.image.url(),
                 categoryId: faker.number.int({ min: 1, max: 5 }),
-                brandId: faker.number.int({ min: 1, max: 5 }),
+                brandId: faker.number.int({ min: 1, max: 10 }),
             });
         }
     }
@@ -31,13 +34,11 @@ class ProductsService {
     }
 
     async getByCategory(categoryId) {
-        const list = this.products.filter((p) => p.categoryId === parseInt(categoryId));
-        return list;
+        return this.products.filter((p) => p.categoryId === parseInt(categoryId));
     }
 
     async getByBrand(brandId) {
-        const list = this.products.filter((p) => p.brandId === parseInt(brandId));
-        return list;
+        return this.products.filter((p) => p.brandId === parseInt(brandId));
     }
 
     async create(data) {
@@ -45,6 +46,22 @@ class ProductsService {
 
         if (!productName || !description || !price || !categoryId || !brandId) {
             throw new Error("Required fields missing");
+        }
+
+        // Validar existencia de marca y categoría
+        const brandExists = this.brandsService.getById(brandId);
+        const categoryExists = this.categoriesService.getById(categoryId);
+
+        if (!brandExists && !categoryExists) {
+            throw new Error("Brand and Category do not exist");
+        }
+
+        if (!brandExists) {
+            throw new Error("Brand does not exist");
+        }
+
+        if (!categoryExists) {
+            throw new Error("Category does not exist");
         }
 
         const newProduct = {
@@ -61,9 +78,22 @@ class ProductsService {
         return newProduct;
     }
 
+
     async update(id, changes) {
         const index = this.products.findIndex((p) => p.id === parseInt(id));
         if (index === -1) throw new Error("Product Not Found");
+
+        // Validar cambios de marca
+        if (changes.brandId) {
+            const brand = this.brandsService.getById(changes.brandId);
+            if (!brand) throw new Error("Brand does not exist");
+        }
+
+        // Validar cambios de categoría
+        if (changes.categoryId) {
+            const category = this.categoriesService.getById(changes.categoryId);
+            if (!category) throw new Error("Category does not exist");
+        }
 
         const updated = {
             ...this.products[index],

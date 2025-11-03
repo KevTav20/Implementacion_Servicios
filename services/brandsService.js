@@ -1,8 +1,5 @@
-const { faker } = require("@faker-js/faker");
-
 class BrandsService {
-    constructor(productsService) {
-        this.productsService = productsService;
+    constructor() {
         this.brands = [
             { id: 1, brandName: "Nike", description: "Sportswear and footwear", active: true },
             { id: 2, brandName: "Adidas", description: "Athletic apparel and shoes", active: true },
@@ -15,8 +12,13 @@ class BrandsService {
             { id: 9, brandName: "Honda", description: "Automobiles, motorcycles, and engines", active: true },
             { id: 10, brandName: "Microsoft", description: "Software, devices, and technology", active: true }
         ];
+
+        this.productsService = null; // Se inyectará después
     }
 
+    injectProductsService(productsService) {
+        this.productsService = productsService;
+    }
 
     getAll() {
         return this.brands;
@@ -32,6 +34,7 @@ class BrandsService {
             active: true,
             ...data
         };
+
         this.brands.push(newBrand);
         return newBrand;
     }
@@ -47,6 +50,7 @@ class BrandsService {
 
         return this.brands[index];
     }
+
     updateFull(id, data) {
         const index = this.brands.findIndex(b => b.id == id);
         if (index === -1) throw new Error("Brand Not Found");
@@ -69,21 +73,21 @@ class BrandsService {
     delete(id) {
         const brandId = parseInt(id);
 
-        const hasProducts = this.productsService.products.some(
-            p => p.brandId === brandId
-        );
-
-        if (hasProducts) {
-            throw new Error(
-                "No se puede eliminar la marca porque tiene productos asociados"
+        // Validación de integridad referencial
+        if (this.productsService) {
+            const hasProducts = this.productsService.products.some(
+                p => p.brandId === brandId
             );
+
+            if (hasProducts) {
+                throw new Error("No se puede eliminar la marca porque tiene productos asociados");
+            }
         }
 
         const index = this.brands.findIndex(b => b.id === brandId);
         if (index === -1) throw new Error("Brand Not Found");
 
-        const deleted = this.brands.splice(index, 1);
-        return deleted[0];
+        return this.brands.splice(index, 1)[0];
     }
 }
 
