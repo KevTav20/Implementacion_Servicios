@@ -1,7 +1,8 @@
 const { faker } = require("@faker-js/faker");
 
 class BrandsService {
-    constructor() {
+    constructor(productsService) {
+        this.productsService = productsService;
         this.brands = [
             { id: 1, brandName: "Nike", description: "Sportswear and footwear", active: true },
             { id: 2, brandName: "Adidas", description: "Athletic apparel and shoes", active: true },
@@ -15,6 +16,7 @@ class BrandsService {
             { id: 10, brandName: "Microsoft", description: "Software, devices, and technology", active: true }
         ];
     }
+
 
     getAll() {
         return this.brands;
@@ -42,11 +44,42 @@ class BrandsService {
             ...this.brands[index],
             ...changes
         };
+
         return this.brands[index];
+    }
+    updateFull(id, data) {
+        const index = this.brands.findIndex(b => b.id == id);
+        if (index === -1) throw new Error("Brand Not Found");
+
+        if (!data.brandName || !data.description) {
+            throw new Error("brandName y description son requeridos");
+        }
+
+        const updated = {
+            id: parseInt(id),
+            brandName: data.brandName,
+            description: data.description,
+            active: data.active ?? true
+        };
+
+        this.brands[index] = updated;
+        return updated;
     }
 
     delete(id) {
-        const index = this.brands.findIndex(b => b.id == id);
+        const brandId = parseInt(id);
+
+        const hasProducts = this.productsService.products.some(
+            p => p.brandId === brandId
+        );
+
+        if (hasProducts) {
+            throw new Error(
+                "No se puede eliminar la marca porque tiene productos asociados"
+            );
+        }
+
+        const index = this.brands.findIndex(b => b.id === brandId);
         if (index === -1) throw new Error("Brand Not Found");
 
         const deleted = this.brands.splice(index, 1);

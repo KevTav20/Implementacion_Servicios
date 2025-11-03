@@ -1,5 +1,6 @@
 class CategoriesService {
-    constructor() {
+    constructor(productsService) {
+        this.productsService = productsService;
         this.categories = [
             { id: 1, categoryName: 'Electronics', description: 'Devices, gadgets, and accessories for daily use', active: true },
             { id: 2, categoryName: 'Books', description: 'Printed and digital books across all genres', active: true },
@@ -43,9 +44,38 @@ class CategoriesService {
         return this.categories[index];
     }
 
-    delete(id) {
+    updateFull(id, data) {
         const index = this.categories.findIndex(c => c.id == id);
-        if (index === -1) throw new Error('Category Not Found');
+        if (index === -1) throw new Error("Category Not Found");
+
+        if (!data.categoryName || !data.description) {
+            throw new Error("categoryName y description son requeridos");
+        }
+
+        const updated = {
+            id: parseInt(id),
+            categoryName: data.categoryName,
+            description: data.description,
+            active: data.active ?? true
+        };
+
+        this.categories[index] = updated;
+        return updated;
+    }
+
+    delete(id) {
+        const categoryId = parseInt(id);
+
+        const hasProducts = this.productsService.products.some(
+            p => p.categoryId === categoryId
+        );
+
+        if (hasProducts) {
+            throw new Error("No se puede eliminar la categoría porque tiene productos asociados");
+        }
+
+        const index = this.categories.findIndex(c => c.id === categoryId);
+        if (index === -1) throw new Error("Category Not Found");
 
         const deleted = this.categories.splice(index, 1);
         return deleted[0];

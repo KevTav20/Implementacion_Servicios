@@ -1,162 +1,300 @@
 const express = require("express");
 const router = express.Router();
-const { faker } = require("@faker-js/faker"); // Faker moderno
-const productsService = require("../services/productsService")
-const service = new productsService()
+const ProductsService = require("../services/productsService");
+const service = new ProductsService();
 
-// // Generar productos
-// function generateProducts(limit = 20) {
-//     const products = [];
-//     for (let index = 0; index < limit; index++) {
-//         products.push({
-//             id: index + 1,
-//             productName: faker.commerce.productName(),
-//             description: faker.commerce.productDescription(),
-//             price: parseFloat(faker.commerce.price()),
-//             image: faker.image.url(),
-//             categoryId: faker.number.int({ min: 1, max: 5 }),
-//             brandId: faker.number.int({ min: 1, max: 5 }),
-//         });
-//     }
-//     return products;
-// }
+/**
+ * @swagger
+ * tags:
+ *   name: Products
+ *   description: Endpoints para la gestión de productos
+ */
 
-// Dataset global
-let products = generateProducts(20);
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Product:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         productName:
+ *           type: string
+ *         description:
+ *           type: string
+ *         price:
+ *           type: number
+ *         image:
+ *           type: string
+ *         categoryId:
+ *           type: integer
+ *         brandId:
+ *           type: integer
+ */
 
-// GET todos los productos
-router.get("/", (req, res) => {
-    const products = service.getAll()
-    res.json(products)
-});
-
-// GET producto por ID
-router.get("/:id", (req, res) => {
-    const { id } = req.params
-    const product = service.getById(id)
-    res.json(product)
-});
-
-
-// GET productos por categoría
-router.get("/categories/:categoryId", (req, res) => {
-    const categoryId = parseInt(req.params.categoryId);
-    const filtered = products.filter((p) => p.categoryId === categoryId);
-
-    if (filtered.length === 0) {
-        return res.status(404).json({ message: "No hay productos en esta categoría" });
+/**
+ * @swagger
+ * /products:
+ *   get:
+ *     summary: Obtener todos los productos
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Lista de productos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Product'
+ */
+router.get("/", async (req, res, next) => {
+    try {
+        const products = await service.getAll();
+        res.json(products);
+    } catch (error) {
+        next(error);
     }
-
-    res.json(filtered);
 });
 
-// GET productos por marca
-router.get("/brands/:brandId", (req, res) => {
-    const brandId = parseInt(req.params.brandId);
-    const filtered = products.filter((p) => p.brandId === brandId);
-
-    if (filtered.length === 0) {
-        return res.status(404).json({ message: "No hay productos en esta marca" });
+/**
+ * @swagger
+ * /products/{id}:
+ *   get:
+ *     summary: Obtener un producto por ID
+ *     tags: [Products]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Producto encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Producto no encontrado
+ */
+router.get("/:id", async (req, res, next) => {
+    try {
+        const product = await service.getById(req.params.id);
+        res.json(product);
+    } catch (error) {
+        next(error);
     }
-
-    res.json(filtered);
 });
 
-
-
-// // POST crear producto
-// router.post("/", (req, res) => {
-//     try {
-//         const newProduct = service.create(req.body);
-//         res.status(201).json({ message: "Producto creado", data: newProduct });
-//     } catch (error) {
-//         res.status(400).json({ message: error.message });
-//     }
-// });
-
-// POST crear producto version Profe
-router.post("/", (req, res) => {
-    const body = req.body
-    const newProduct = service.create(body)
-    res.status(201).json(newProduct)
-});
-
-// PUT actualizar producto completo
-router.put("/:id", (req, res) => {
-    const id = parseInt(req.params.id);
-    const index = products.findIndex((p) => p.id === id);
-
-    if (index === -1) {
-        return res.status(404).json({ message: "Producto no encontrado" });
+/**
+ * @swagger
+ * /products/categories/{categoryId}:
+ *   get:
+ *     summary: Obtener productos por categoría
+ *     tags: [Products]
+ *     parameters:
+ *       - name: categoryId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Productos encontrados
+ *       404:
+ *         description: No hay productos en esta categoría
+ */
+router.get("/categories/:categoryId", async (req, res, next) => {
+    try {
+        const products = await service.getByCategory(req.params.categoryId);
+        if (products.length === 0) {
+            return res.status(404).json({ message: "No hay productos en esta categoría" });
+        }
+        res.json(products);
+    } catch (error) {
+        next(error);
     }
+});
 
-    const { productName, description, price, image, categoryId, brandId } = req.body;
-
-    if (!productName || !description || !price || !categoryId || !brandId) {
-        return res.status(400).json({ message: "Todos los campos son requeridos" });
+/**
+ * @swagger
+ * /products/brands/{brandId}:
+ *   get:
+ *     summary: Obtener productos por marca
+ *     tags: [Products]
+ *     parameters:
+ *       - name: brandId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Productos encontrados
+ *       404:
+ *         description: No hay productos con esta marca
+ */
+router.get("/brands/:brandId", async (req, res, next) => {
+    try {
+        const products = await service.getByBrand(req.params.brandId);
+        if (products.length === 0) {
+            return res.status(404).json({ message: "No hay productos con esta marca" });
+        }
+        res.json(products);
+    } catch (error) {
+        next(error);
     }
-
-    products[index] = {
-        id,
-        productName,
-        description,
-        price,
-        image: image || faker.image.url(),
-        categoryId,
-        brandId,
-    };
-
-    res.json({ message: "Producto actualizado", data: products[index] });
 });
 
-// PATCH actualizar parcialmente
-// router.patch("/:id", (req, res) => {
-//     const id = parseInt(req.params.id);
-//     const product = products.find((p) => p.id === id);
-
-//     if (!product) {
-//         return res.status(404).json({ message: "Producto no encontrado" });
-//     }
-
-//     const { productName, description, price, image, categoryId, brandId } = req.body;
-
-//     if (productName !== undefined) product.productName = productName;
-//     if (description !== undefined) product.description = description;
-//     if (price !== undefined) product.price = price;
-//     if (image !== undefined) product.image = image;
-//     if (categoryId !== undefined) product.categoryId = categoryId;
-//     if (brandId !== undefined) product.brandId = brandId;
-
-//     res.json({ message: "Producto modificado", data: product });
-// });
-
-router.patch("/:id", (req, res) => {
-    const { id } = req.params
-    const body = req.body
-    const product = service.update(id, body)
-    res.json(product)
+/**
+ * @swagger
+ * /products:
+ *   post:
+ *     summary: Crear un nuevo producto
+ *     tags: [Products]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productName:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               image:
+ *                 type: string
+ *               categoryId:
+ *                 type: integer
+ *               brandId:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Producto creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ */
+router.post("/", async (req, res, next) => {
+    try {
+        const newProduct = await service.create(req.body);
+        res.status(201).json(newProduct);
+    } catch (error) {
+        next(error);
+    }
 });
 
-// // DELETE eliminar producto
-// router.delete("/:id", (req, res) => {
-//     const id = parseInt(req.params.id);
-//     const index = products.findIndex((p) => p.id === id);
-
-//     if (index === -1) {
-//         return res.status(404).json({ message: "Producto no encontrado" });
-//     }
-
-//     const deleted = products.splice(index, 1);
-
-//     res.json({ message: "Producto eliminado", data: deleted[0] });
-// });
-
-// DELETE eliminar producto
-router.delete("/:id", (req, res) => {
-    const { id } = req.params
-    const respuesta = service.delete(id)
-    res.json(respuesta)
+/**
+ * @swagger
+ * /products/{id}:
+ *   put:
+ *     summary: Actualizar completamente un producto
+ *     tags: [Products]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productName:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               image:
+ *                 type: string
+ *               categoryId:
+ *                 type: integer
+ *               brandId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Producto actualizado
+ *       404:
+ *         description: Producto no encontrado
+ */
+router.put("/:id", async (req, res, next) => {
+    try {
+        const updated = await service.update(req.params.id, req.body);
+        res.json(updated);
+    } catch (error) {
+        next(error);
+    }
 });
 
+/**
+ * @swagger
+ * /products/{id}:
+ *   patch:
+ *     summary: Actualizar parcialmente un producto
+ *     tags: [Products]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Producto actualizado parcialmente
+ *       404:
+ *         description: Producto no encontrado
+ */
+router.patch("/:id", async (req, res, next) => {
+    try {
+        const updated = await service.update(req.params.id, req.body);
+        res.json(updated);
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * @swagger
+ * /products/{id}:
+ *   delete:
+ *     summary: Eliminar un producto
+ *     tags: [Products]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Producto eliminado
+ *       404:
+ *         description: Producto no encontrado
+ */
+router.delete("/:id", async (req, res, next) => {
+    try {
+        const result = await service.delete(req.params.id);
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+});
 
 module.exports = router;

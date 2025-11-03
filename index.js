@@ -1,10 +1,16 @@
 const express = require('express');
 const routerApi = require('./routes/rutas');
+const { logErrors, errorHandler } = require('./middlewares/errorHandler');
 const app = express();
+const swaggerSetup = require('./swagger');
 const port = 3000;
 app.use(express.json());
 
 routerApi(app)
+swaggerSetup(app);
+
+app.use(logErrors);
+app.use(errorHandler);
 
 app.get("/", (req, res) => {
     res.send("Hola desde mi server en Epress");
@@ -34,18 +40,18 @@ app.get("/nuevaruta", (req, res) => {
 //     })
 // })
 
-app.get("/users", (req, res) =>{
-    const {username, lastname} = req.query
-    if(username && lastname){
+app.get("/users", (req, res) => {
+    const { username, lastname } = req.query
+    if (username && lastname) {
         res.json({
             username,
             lastname
         });
-    }else{
+    } else {
         res.send("No hay parametros query")
     }
 })
-app.listen(port, ()=> {
+app.listen(port, () => {
     console.log("My server is working on: " + port)
 })
 

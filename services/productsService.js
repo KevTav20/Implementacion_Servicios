@@ -7,33 +7,48 @@ class ProductsService {
     }
 
     generate() {
-        const generateProducts = (limit = 20) => {
-            for (let index = 0; index < limit; index++) {
-                this.products.push({
-                    id: index + 1,
-                    productName: faker.commerce.productName(),
-                    description: faker.commerce.productDescription(),
-                    price: parseFloat(faker.commerce.price()),
-                    image: faker.image.url(),
-                    categoryId: faker.number.int({ min: 1, max: 5 }),
-                    brandId: faker.number.int({ min: 1, max: 5 }),
-                });
-            }
-        };
-        generateProducts(20);
+        for (let i = 1; i <= 20; i++) {
+            this.products.push({
+                id: i,
+                productName: faker.commerce.productName(),
+                description: faker.commerce.productDescription(),
+                price: parseFloat(faker.commerce.price()),
+                image: faker.image.url(),
+                categoryId: faker.number.int({ min: 1, max: 5 }),
+                brandId: faker.number.int({ min: 1, max: 5 }),
+            });
+        }
     }
 
-    create({ productName, description, price, image, categoryId, brandId }) {
+    async getAll() {
+        return this.products;
+    }
+
+    async getById(id) {
+        const product = this.products.find((p) => p.id === parseInt(id));
+        if (!product) throw new Error("Product Not Found");
+        return product;
+    }
+
+    async getByCategory(categoryId) {
+        const list = this.products.filter((p) => p.categoryId === parseInt(categoryId));
+        return list;
+    }
+
+    async getByBrand(brandId) {
+        const list = this.products.filter((p) => p.brandId === parseInt(brandId));
+        return list;
+    }
+
+    async create(data) {
+        const { productName, description, price, image, categoryId, brandId } = data;
+
         if (!productName || !description || !price || !categoryId || !brandId) {
-            throw new Error(
-                "Campos requeridos: productName, description, price, categoryId, brandId"
-            );
+            throw new Error("Required fields missing");
         }
 
         const newProduct = {
-            id: this.products.length
-                ? this.products[this.products.length - 1].id + 1
-                : 1,
+            id: this.products.length + 1,
             productName,
             description,
             price,
@@ -46,46 +61,25 @@ class ProductsService {
         return newProduct;
     }
 
-    create2(data) {
-        const newProduct = {
-            id: this.products.length
-                ? this.products[this.products.length - 1].id + 1
-                : 1,
-            ...data
-        }
-        this.products.push(newProduct)
-        return newProduct
+    async update(id, changes) {
+        const index = this.products.findIndex((p) => p.id === parseInt(id));
+        if (index === -1) throw new Error("Product Not Found");
+
+        const updated = {
+            ...this.products[index],
+            ...changes,
+        };
+
+        this.products[index] = updated;
+        return updated;
     }
 
-    update(id, changes) {
-        const index = this.products.findIndex(item => item.id == id)
-        if (index === -1) {
-            throw new Error("Product Not Found")
-        }
-        const product = this.products[index]
-        this.products[index] = {
-            ...product, //con esto mantenemos las propiedades del producto
-            ...changes//y asi borra todo, solo se cambia la propiedad actualizada
-        }
-        return this.products[index]
-    }
+    async delete(id) {
+        const index = this.products.findIndex((p) => p.id === parseInt(id));
+        if (index === -1) throw new Error("Product Not Found");
 
-
-    delete(id) {
-        const index = this.products.findIndex(item => item.id == id)
-        if (index === -1) {
-            throw new Error("Product Not Found")
-        }
-        this.products.splice(index, 1)
-        return { id }
-    }
-
-    getAll() {
-        return this.products;
-    }
-
-    getById(id) {
-        return this.products.find((p) => p.id === parseInt(id));
+        this.products.splice(index, 1);
+        return { id };
     }
 }
 

@@ -1,147 +1,170 @@
-// const express = require('express');
-// const router = express.Router();
-
-// // Arreglo estático de marcas (brands)
-// let brands = [
-//     { id: 1, brandName: "Nike", description: "Sportswear and footwear", active: true },
-//     { id: 2, brandName: "Adidas", description: "Athletic apparel and shoes", active: true },
-//     { id: 3, brandName: "Apple", description: "Electronics and technology products", active: true },
-//     { id: 4, brandName: "Samsung", description: "Consumer electronics and appliances", active: true },
-//     { id: 5, brandName: "Sony", description: "Electronics, gaming, and entertainment", active: true },
-//     { id: 6, brandName: "Coca-Cola", description: "Beverages and soft drinks", active: true },
-//     { id: 7, brandName: "Pepsi", description: "Beverages and snacks", active: true },
-//     { id: 8, brandName: "Toyota", description: "Automobiles and vehicles", active: true },
-//     { id: 9, brandName: "Honda", description: "Automobiles, motorcycles, and engines", active: true },
-//     { id: 10, brandName: "Microsoft", description: "Software, devices, and technology", active: true }
-// ];
-
-// // GET todas las marcas
-// router.get("/", (req, res) => {
-//     res.json(brands);
-// });
-
-// // GET marca por id
-// router.get("/:id", (req, res) => {
-//     const id = parseInt(req.params.id);
-//     const brand = brands.find(b => b.id === id);
-
-//     if (!brand) {
-//         return res.status(404).json({ message: "Marca no encontrada" });
-//     }
-
-//     res.json(brand);
-// });
-
-// // POST nueva marca
-// router.post("/", (req, res) => {
-//     const { brandName, description, active } = req.body;
-
-//     if (!brandName || !description) {
-//         return res.status(400).json({ message: "brandName y description son requeridos" });
-//     }
-
-//     const newBrand = {
-//         id: brands.length ? brands[brands.length - 1].id + 1 : 1,
-//         brandName,
-//         description,
-//         active: active ?? true
-//     };
-
-//     brands.push(newBrand);
-//     res.status(201).json(newBrand);
-// });
-
-// // PUT actualizar marca completa (sobrescribe)
-// router.put("/:id", (req, res) => {
-//     const id = parseInt(req.params.id);
-//     const index = brands.findIndex(b => b.id === id);
-
-//     if (index === -1) {
-//         return res.status(404).json({ message: "Marca no encontrada" });
-//     }
-
-//     const { brandName, description, active } = req.body;
-
-//     if (!brandName || !description) {
-//         return res.status(400).json({ message: "brandName y description son requeridos" });
-//     }
-
-//     brands[index] = { id, brandName, description, active: active ?? true };
-
-//     res.json(brands[index]);
-// });
-
-// // PATCH actualizar parcialmente
-// router.patch("/:id", (req, res) => {
-//     const id = parseInt(req.params.id);
-//     const brand = brands.find(b => b.id === id);
-
-//     if (!brand) {
-//         return res.status(404).json({ message: "Marca no encontrada" });
-//     }
-
-//     const { brandName, description, active } = req.body;
-
-//     if (brandName !== undefined) brand.brandName = brandName;
-//     if (description !== undefined) brand.description = description;
-//     if (active !== undefined) brand.active = active;
-
-//     res.json(brand);
-// });
-
-// // DELETE eliminar marca
-// router.delete("/:id", (req, res) => {
-//     const id = parseInt(req.params.id);
-//     const index = brands.findIndex(b => b.id === id);
-
-//     if (index === -1) {
-//         return res.status(404).json({ message: "Marca no encontrada" });
-//     }
-
-//     const deleted = brands.splice(index, 1);
-//     res.json({ message: "Marca eliminada", deleted: deleted[0] });
-// });
-
-// module.exports = router;
-
 const express = require('express');
 const router = express.Router();
+
+const ProductsService = require('../services/productsService');
+const productsService = new ProductsService(); // ✅ instancia única para validar dependencias
+
 const BrandsService = require('../services/brandsService');
+const service = new BrandsService(productsService); // ✅ dependencia inyectada
 
-const service = new BrandsService();
+/**
+ * @swagger
+ * tags:
+ *   name: Brands
+ *   description: Endpoints para la gestión de marcas
+ */
 
-// GET todas las marcas
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Brand:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         brandName:
+ *           type: string
+ *         description:
+ *           type: string
+ *         active:
+ *           type: boolean
+ */
+
+/**
+ * @swagger
+ * /brands:
+ *   get:
+ *     summary: Obtener todas las marcas
+ *     tags: [Brands]
+ *     responses:
+ *       200:
+ *         description: Lista de marcas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Brand'
+ */
 router.get("/", (req, res) => {
     res.json(service.getAll());
 });
 
-// GET marca por id
+/**
+ * @swagger
+ * /brands/{id}:
+ *   get:
+ *     summary: Obtener una marca por ID
+ *     tags: [Brands]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Marca encontrada
+ *       404:
+ *         description: Marca no encontrada
+ */
 router.get("/:id", (req, res) => {
     const brand = service.getById(req.params.id);
     if (!brand) return res.status(404).json({ message: "Marca no encontrada" });
     res.json(brand);
 });
 
-// POST nueva marca
+/**
+ * @swagger
+ * /brands:
+ *   post:
+ *     summary: Crear una nueva marca
+ *     tags: [Brands]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               brandName:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               active:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Marca creada exitosamente
+ */
 router.post("/", (req, res) => {
     const { brandName, description, active } = req.body;
-    if (!brandName || !description) return res.status(400).json({ message: "brandName y description son requeridos" });
+
+    if (!brandName || !description) {
+        return res.status(400).json({ message: "brandName y description son requeridos" });
+    }
 
     const newBrand = service.create({ brandName, description, active });
     res.status(201).json(newBrand);
 });
 
-// PUT actualizar marca completa
+/**
+ * @swagger
+ * /brands/{id}:
+ *   put:
+ *     summary: Actualizar completamente una marca
+ *     tags: [Brands]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               brandName:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               active:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Marca actualizada completamente
+ *       404:
+ *         description: Marca no encontrada
+ */
 router.put("/:id", (req, res) => {
     try {
-        const updated = service.update(req.params.id, req.body);
+        const updated = service.updateFull(req.params.id, req.body);
         res.json(updated);
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 });
 
-// PATCH actualizar parcialmente marca
+/**
+ * @swagger
+ * /brands/{id}:
+ *   patch:
+ *     summary: Actualizar parcialmente una marca
+ *     tags: [Brands]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Marca actualizada parcialmente
+ *       404:
+ *         description: Marca no encontrada
+ */
 router.patch("/:id", (req, res) => {
     try {
         const updated = service.update(req.params.id, req.body);
@@ -151,13 +174,30 @@ router.patch("/:id", (req, res) => {
     }
 });
 
-// DELETE eliminar marca
+/**
+ * @swagger
+ * /brands/{id}:
+ *   delete:
+ *     summary: Eliminar una marca
+ *     tags: [Brands]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Marca eliminada
+ *       400:
+ *         description: No se puede eliminar (tiene productos asociados)
+ *       404:
+ *         description: Marca no encontrada
+ */
 router.delete("/:id", (req, res) => {
     try {
         const deleted = service.delete(req.params.id);
         res.json({ message: "Marca eliminada", deleted });
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 });
 

@@ -1,17 +1,17 @@
-const faker = require('faker');
+const { faker } = require('@faker-js/faker');
 
 class UsersService {
     constructor() {
         this.users = [];
-        this.generate(10); // generar 10 usuarios al inicio
+        this.generate(10);
     }
 
     generate(limit = 10) {
         for (let index = 0; index < limit; index++) {
             this.users.push({
                 id: index + 1,
-                name: faker.name.firstName(),
-                username: faker.internet.userName(),
+                name: faker.person.firstName(),
+                username: faker.internet.username(),
                 password: faker.internet.password(),
             });
         }
@@ -43,6 +43,25 @@ class UsersService {
             ...changes
         };
         return this.users[index];
+    }
+
+    updateFull(id, data) {
+        const index = this.users.findIndex(u => u.id == id);
+        if (index === -1) throw new Error("User Not Found");
+
+        if (!data.name || !data.username || !data.password) {
+            throw new Error("name, username y password son requeridos");
+        }
+
+        const updated = {
+            id: parseInt(id),
+            name: data.name,
+            username: data.username,
+            password: data.password
+        };
+
+        this.users[index] = updated;
+        return updated;
     }
 
     delete(id) {
