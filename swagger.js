@@ -17,6 +17,7 @@ const swaggerDefinition = {
         }
     ]
 };
+
 const options = {
     swaggerDefinition,
     //Rutas donde se encuentran los archivos con anotaciones de Swagger

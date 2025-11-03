@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 const ProductsService = require('../services/productsService');
-const productsService = new ProductsService(); // ✅ instancia única para validar dependencias
+const productsService = new ProductsService();
 
 const CategoriesService = require('../services/categoriesService');
-const service = new CategoriesService(productsService); // ✅ se inyecta dependencia
+const service = new CategoriesService(productsService);
 
 /**
  * @swagger
