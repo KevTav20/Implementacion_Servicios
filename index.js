@@ -1,64 +1,32 @@
 const express = require('express');
-const routerApi = require('./routes/rutas');
-const { logErrors, errorHandler } = require('./middlewares/errorHandler');
 const app = express();
 const swaggerSetup = require('./swagger');
 const port = 3000;
+
+const CategoriesService = require('./services/categoriesService');
+const BrandsService = require('./services/brandsService');
+const ProductsService = require('./services/productsService');
+
+const categoriesRouter = require('./routes/categoriesRouter');
+const brandsRouter = require('./routes/brandsRouter');
+const productsRouter = require('./routes/productsRouter');
+
 app.use(express.json());
 
-routerApi(app)
+// Crear instancias globales
+const categoriesService = new CategoriesService();
+const brandsService = new BrandsService();
+const productsService = new ProductsService(brandsService, categoriesService);
+
+// Inyectar dependencias
+brandsService.injectProductsService(productsService);
+categoriesService.injectProductsService(productsService);
+
+// Pasar instancias a los routers
+app.use("/categories", categoriesRouter(categoriesService));
+app.use("/brands", brandsRouter(brandsService, productsService));
+app.use("/products", productsRouter(productsService));
+
 swaggerSetup(app);
 
-app.use(logErrors);
-app.use(errorHandler);
-
-app.get("/", (req, res) => {
-    res.send("Hola desde mi server en Epress");
-});
-
-app.get("/nuevaruta", (req, res) => {
-    res.send("Hola desde una nueva ruta")
-})
-
-// app.get("/products", (req, res)=> {
-//     res.json([{
-//         name: 'Coca Cola',
-//         price: 50
-//     },
-//     {
-//         name: 'Pepsi',
-//         price: 40
-//     }]);
-// });
-
-// //parametro tipo ruta
-// app.get("/category/:categoryId/products/productsId", (req, res) => {
-//     const {categoryId, productsId} = req.params
-//     res.json({
-//         categoryId,
-//         productsId
-//     })
-// })
-
-app.get("/users", (req, res) => {
-    const { username, lastname } = req.query
-    if (username && lastname) {
-        res.json({
-            username,
-            lastname
-        });
-    } else {
-        res.send("No hay parametros query")
-    }
-})
-app.listen(port, () => {
-    console.log("My server is working on: " + port)
-})
-
-/*
-api.example.com/tasks/{id}/
-api.example.com/peaople/{id}/
-api.example.com/users/{id}/tasks/{id}
-*/
-
-
+app.listen(port, () => console.log("Server running on " + port));

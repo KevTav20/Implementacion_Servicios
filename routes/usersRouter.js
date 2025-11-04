@@ -26,6 +26,30 @@ const service = new UsersService();
  *           type: string
  *         password:
  *           type: string
+ *
+ *     UserCreate:
+ *       type: object
+ *       required:
+ *         - name
+ *         - username
+ *         - password
+ *       properties:
+ *         name:
+ *           type: string
+ *         username:
+ *           type: string
+ *         password:
+ *           type: string
+ *
+ *     UserUpdate:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *         username:
+ *           type: string
+ *         password:
+ *           type: string
  */
 
 /**
@@ -37,6 +61,12 @@ const service = new UsersService();
  *     responses:
  *       200:
  *         description: Lista de usuarios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
  */
 router.get('/', (req, res) => {
     res.json(service.getAll());
@@ -52,6 +82,8 @@ router.get('/', (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *         description: Usuario encontrado
@@ -72,6 +104,10 @@ router.get('/:id', (req, res) => {
  *     tags: [Users]
  *     requestBody:
  *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserCreate'
  *     responses:
  *       201:
  *         description: Usuario creado
@@ -79,8 +115,11 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
     const { name, username, password } = req.body;
 
-    if (!name || !username || !password)
-        return res.status(400).json({ message: 'name, username y password son requeridos' });
+    if (!name || !username || !password) {
+        return res.status(400).json({
+            message: 'name, username y password son requeridos'
+        });
+    }
 
     const newUser = service.create({ name, username, password });
     res.status(201).json({ message: 'Usuario creado', data: newUser });
@@ -96,8 +135,14 @@ router.post('/', (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: integer
  *     requestBody:
  *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserCreate'
  *     responses:
  *       200:
  *         description: Usuario actualizado completamente
@@ -121,11 +166,17 @@ router.put('/:id', (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: integer
  *     requestBody:
- *       required: true
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserUpdate'
  *     responses:
  *       200:
- *         description: Usuario modificado parcialmente
+ *         description: Usuario parcialmente modificado
  */
 router.patch('/:id', (req, res) => {
     try {
@@ -146,6 +197,8 @@ router.patch('/:id', (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
  *         description: Usuario eliminado

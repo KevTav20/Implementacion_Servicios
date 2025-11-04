@@ -17,8 +17,9 @@ class ProductsService {
                 description: faker.commerce.productDescription(),
                 price: parseFloat(faker.commerce.price()),
                 image: faker.image.url(),
+                stock: faker.number.int({ min: 0, max: 100 }),
                 categoryId: faker.number.int({ min: 1, max: 5 }),
-                brandId: faker.number.int({ min: 1, max: 10 }),
+                brandId: faker.number.int({ min: 1, max: 5 }),
             });
         }
     }
@@ -28,27 +29,34 @@ class ProductsService {
     }
 
     async getById(id) {
-        const product = this.products.find((p) => p.id === parseInt(id));
+        const product = this.products.find(p => p.id === parseInt(id));
         if (!product) throw new Error("Product Not Found");
         return product;
     }
 
     async getByCategory(categoryId) {
-        return this.products.filter((p) => p.categoryId === parseInt(categoryId));
+        return this.products.filter(p => p.categoryId === parseInt(categoryId));
     }
 
     async getByBrand(brandId) {
-        return this.products.filter((p) => p.brandId === parseInt(brandId));
+        return this.products.filter(p => p.brandId === parseInt(brandId));
     }
 
     async create(data) {
-        const { productName, description, price, image, categoryId, brandId } = data;
+        const { productName, description, price, image, stock, categoryId, brandId } = data;
 
-        if (!productName || !description || !price || !categoryId || !brandId) {
+        // Validación correcta sin confundir valores 0
+        if (
+            productName === undefined ||
+            description === undefined ||
+            price === undefined ||
+            categoryId === undefined ||
+            brandId === undefined
+        ) {
             throw new Error("Required fields missing");
         }
 
-        // Validar existencia de marca y categoría
+        // Validar existencia de brand y category
         const brandExists = this.brandsService.getById(brandId);
         const categoryExists = this.categoriesService.getById(categoryId);
 
@@ -70,6 +78,7 @@ class ProductsService {
             description,
             price,
             image: image || faker.image.url(),
+            stock: stock === undefined ? faker.number.int({ min: 0, max: 50 }) : stock,
             categoryId,
             brandId,
         };
@@ -78,19 +87,18 @@ class ProductsService {
         return newProduct;
     }
 
-
     async update(id, changes) {
-        const index = this.products.findIndex((p) => p.id === parseInt(id));
+        const index = this.products.findIndex(p => p.id === parseInt(id));
         if (index === -1) throw new Error("Product Not Found");
 
-        // Validar cambios de marca
-        if (changes.brandId) {
+        // Validar cambios de brand
+        if (changes.brandId !== undefined) {
             const brand = this.brandsService.getById(changes.brandId);
             if (!brand) throw new Error("Brand does not exist");
         }
 
         // Validar cambios de categoría
-        if (changes.categoryId) {
+        if (changes.categoryId !== undefined) {
             const category = this.categoriesService.getById(changes.categoryId);
             if (!category) throw new Error("Category does not exist");
         }
@@ -105,7 +113,7 @@ class ProductsService {
     }
 
     async delete(id) {
-        const index = this.products.findIndex((p) => p.id === parseInt(id));
+        const index = this.products.findIndex(p => p.id === parseInt(id));
         if (index === -1) throw new Error("Product Not Found");
 
         this.products.splice(index, 1);
