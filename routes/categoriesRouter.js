@@ -3,7 +3,7 @@ const express = require("express");
 module.exports = function (categoriesService, productsService) {
     const router = express.Router();
 
-    // Inyectar productsService en categoriesService
+    // Inyectar productsService para validar eliminaciones
     categoriesService.injectProductsService(productsService);
 
     /**
@@ -22,12 +22,16 @@ module.exports = function (categoriesService, productsService) {
      *       properties:
      *         id:
      *           type: integer
+     *           example: 1
      *         categoryName:
      *           type: string
+     *           example: Electrónicos
      *         description:
      *           type: string
+     *           example: Artículos electrónicos y gadgets
      *         active:
      *           type: boolean
+     *           example: true
      *
      *     CategoryCreate:
      *       type: object
@@ -37,20 +41,26 @@ module.exports = function (categoriesService, productsService) {
      *       properties:
      *         categoryName:
      *           type: string
+     *           example: Ropa
      *         description:
      *           type: string
+     *           example: Categoría destinada a prendas de vestir
      *         active:
      *           type: boolean
+     *           example: true
      *
      *     CategoryUpdate:
      *       type: object
      *       properties:
      *         categoryName:
      *           type: string
+     *           example: Electrodomésticos
      *         description:
      *           type: string
+     *           example: Productos para el hogar
      *         active:
      *           type: boolean
+     *           example: false
      */
 
     /**
@@ -80,8 +90,8 @@ module.exports = function (categoriesService, productsService) {
      *     summary: Obtener una categoría por ID
      *     tags: [Categories]
      *     parameters:
-     *       - name: id
-     *         in: path
+     *       - in: path
+     *         name: id
      *         required: true
      *         schema:
      *           type: integer
@@ -127,7 +137,9 @@ module.exports = function (categoriesService, productsService) {
         const { categoryName, description, active } = req.body;
 
         if (!categoryName || !description) {
-            return res.status(400).json({ message: "categoryName y description son requeridos" });
+            return res.status(400).json({
+                message: "categoryName y description son requeridos",
+            });
         }
 
         const newCategory = categoriesService.create({ categoryName, description, active });
@@ -141,8 +153,8 @@ module.exports = function (categoriesService, productsService) {
      *     summary: Actualizar completamente una categoría
      *     tags: [Categories]
      *     parameters:
-     *       - name: id
-     *         in: path
+     *       - in: path
+     *         name: id
      *         required: true
      *         schema:
      *           type: integer
@@ -156,7 +168,9 @@ module.exports = function (categoriesService, productsService) {
      *       200:
      *         description: Categoría actualizada completamente
      *       400:
-     *         description: Error en los datos
+     *         description: Datos incorrectos
+     *       404:
+     *         description: Categoría no encontrada
      */
     router.put("/:id", (req, res) => {
         try {
@@ -174,8 +188,8 @@ module.exports = function (categoriesService, productsService) {
      *     summary: Actualizar parcialmente una categoría
      *     tags: [Categories]
      *     parameters:
-     *       - name: id
-     *         in: path
+     *       - in: path
+     *         name: id
      *         required: true
      *         schema:
      *           type: integer
@@ -207,8 +221,8 @@ module.exports = function (categoriesService, productsService) {
      *     summary: Eliminar una categoría
      *     tags: [Categories]
      *     parameters:
-     *       - name: id
-     *         in: path
+     *       - in: path
+     *         name: id
      *         required: true
      *         schema:
      *           type: integer

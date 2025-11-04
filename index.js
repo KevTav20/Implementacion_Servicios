@@ -13,17 +13,17 @@ const productsRouter = require('./routes/productsRouter');
 
 app.use(express.json());
 
-// Crear instancias globales
+// Instancias ÚNICAS y COMPARTIDAS
 const categoriesService = new CategoriesService();
 const brandsService = new BrandsService();
 const productsService = new ProductsService(brandsService, categoriesService);
 
-// Inyectar dependencias
+// Inyectar dependencias una vez
 brandsService.injectProductsService(productsService);
 categoriesService.injectProductsService(productsService);
 
-// Pasar instancias a los routers
-app.use("/categories", categoriesRouter(categoriesService));
+// Pasar EL MISMO service a los routers
+app.use("/categories", categoriesRouter(categoriesService, productsService));
 app.use("/brands", brandsRouter(brandsService, productsService));
 app.use("/products", productsRouter(productsService));
 

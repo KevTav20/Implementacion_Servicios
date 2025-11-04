@@ -1,7 +1,10 @@
 const express = require("express");
 
-module.exports = function (brandsService) {
+module.exports = function (brandsService, productsService) {
     const router = express.Router();
+
+    // Asegurar dependencia correcta
+    brandsService.injectProductsService(productsService);
 
     /**
      * @swagger
@@ -25,7 +28,7 @@ module.exports = function (brandsService) {
      *           example: Nike
      *         description:
      *           type: string
-     *           example: Marca deportiva
+     *           example: Marca deportiva internacional
      *         active:
      *           type: boolean
      *           example: true
@@ -41,7 +44,7 @@ module.exports = function (brandsService) {
      *           example: Adidas
      *         description:
      *           type: string
-     *           example: Marca deportiva
+     *           example: Marca deportiva y de calzado
      *         active:
      *           type: boolean
      *           example: true
@@ -54,7 +57,7 @@ module.exports = function (brandsService) {
      *           example: Puma
      *         description:
      *           type: string
-     *           example: Marca deportiva
+     *           example: Marca deportiva renovada
      *         active:
      *           type: boolean
      *           example: false
@@ -87,8 +90,8 @@ module.exports = function (brandsService) {
      *     summary: Obtener una marca por ID
      *     tags: [Brands]
      *     parameters:
-     *       - in: path
-     *         name: id
+     *       - name: id
+     *         in: path
      *         required: true
      *         schema:
      *           type: integer
@@ -131,9 +134,11 @@ module.exports = function (brandsService) {
      */
     router.post("/", (req, res) => {
         const { brandName, description, active } = req.body;
+
         if (!brandName || !description) {
             return res.status(400).json({ message: "brandName y description son requeridos" });
         }
+
         const newBrand = brandsService.create({ brandName, description, active });
         res.status(201).json(newBrand);
     });
@@ -145,8 +150,8 @@ module.exports = function (brandsService) {
      *     summary: Actualizar completamente una marca
      *     tags: [Brands]
      *     parameters:
-     *       - in: path
-     *         name: id
+     *       - name: id
+     *         in: path
      *         required: true
      *         schema:
      *           type: integer
@@ -183,8 +188,8 @@ module.exports = function (brandsService) {
      *     summary: Actualizar parcialmente una marca
      *     tags: [Brands]
      *     parameters:
-     *       - in: path
-     *         name: id
+     *       - name: id
+     *         in: path
      *         required: true
      *         schema:
      *           type: integer
@@ -198,10 +203,6 @@ module.exports = function (brandsService) {
      *     responses:
      *       200:
      *         description: Marca actualizada parcialmente
-     *         content:
-     *           application/json:
-     *             schema:
-     *               $ref: '#/components/schemas/Brand'
      *       404:
      *         description: Marca no encontrada
      */
@@ -221,24 +222,15 @@ module.exports = function (brandsService) {
      *     summary: Eliminar una marca
      *     tags: [Brands]
      *     parameters:
-     *       - in: path
-     *         name: id
+     *       - name: id
+     *         in: path
      *         required: true
      *         schema:
      *           type: integer
      *         description: ID de la marca
      *     responses:
      *       200:
-     *         description: Marca eliminada
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 message:
-     *                   type: string
-     *                 deleted:
-     *                   type: object
+     *         description: Marca eliminada exitosamente
      *       400:
      *         description: No se puede eliminar (tiene productos asociados)
      *       404:
