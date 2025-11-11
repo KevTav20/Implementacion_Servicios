@@ -104,6 +104,80 @@ module.exports = function (productsService) {
         }
     });
 
+    // GET products by category
+    /**
+     * @swagger
+     * /products/categories/{categoryId}:
+     *   get:
+     *     summary: Obtener productos por categoría
+     *     tags: [Products]
+     *     parameters:
+     *       - name: categoryId
+     *         in: path
+     *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439012"
+     *     responses:
+     *       200:
+     *         description: Productos encontrados
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 $ref: '#/components/schemas/Product'
+     *       404:
+     *         description: No hay productos en esta categoría
+     */
+    router.get("/categories/:categoryId", async (req, res, next) => {
+        try {
+            const products = await productsService.getByCategory(req.params.categoryId);
+            if (!products.length)
+                return res.status(404).json({ message: "No hay productos en esta categoría" });
+            res.json(products);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    // GET products by brand
+    /**
+     * @swagger
+     * /products/brands/{brandId}:
+     *   get:
+     *     summary: Obtener productos por marca
+     *     tags: [Products]
+     *     parameters:
+     *       - name: brandId
+     *         in: path
+     *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439013"
+     *     responses:
+     *       200:
+     *         description: Productos encontrados
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 $ref: '#/components/schemas/Product'
+     *       404:
+     *         description: No hay productos con esta marca
+     */
+    router.get("/brands/:brandId", async (req, res, next) => {
+        try {
+            const products = await productsService.getByBrand(req.params.brandId);
+            if (!products.length)
+                return res.status(404).json({ message: "No hay productos con esta marca" });
+            res.json(products);
+        } catch (error) {
+            next(error);
+        }
+    });
+
     // GET product by ID
     /**
      * @swagger
@@ -196,6 +270,67 @@ module.exports = function (productsService) {
      *               $ref: '#/components/schemas/Product'
      */
     router.put("/:id", async (req, res, next) => {
+        try {
+            const updated = await productsService.update(req.params.id, req.body);
+            res.json(updated);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    // PATCH partial update product
+    /**
+     * @swagger
+     * /products/{id}:
+     *   patch:
+     *     summary: Actualizar parcialmente un producto
+     *     tags: [Products]
+     *     parameters:
+     *       - name: id
+     *         in: path
+     *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
+     *     requestBody:
+     *       required: false
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               productName:
+     *                 type: string
+     *                 example: "Laptop Dell XPS 15"
+     *               description:
+     *                 type: string
+     *                 example: "Laptop de alto rendimiento"
+     *               price:
+     *                 type: number
+     *                 example: 1299.99
+     *               image:
+     *                 type: string
+     *                 example: "https://example.com/image.jpg"
+     *               stock:
+     *                 type: integer
+     *                 example: 50
+     *               categoryId:
+     *                 type: string
+     *                 example: "507f1f77bcf86cd799439012"
+     *               brandId:
+     *                 type: string
+     *                 example: "507f1f77bcf86cd799439013"
+     *     responses:
+     *       200:
+     *         description: Producto actualizado parcialmente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Product'
+     *       404:
+     *         description: Producto no encontrado
+     */
+    router.patch("/:id", async (req, res, next) => {
         try {
             const updated = await productsService.update(req.params.id, req.body);
             res.json(updated);

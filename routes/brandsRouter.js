@@ -181,6 +181,54 @@ module.exports = function (brandsService, productsService) {
     /**
      * @swagger
      * /brands/{id}:
+     *   patch:
+     *     summary: Actualizar parcialmente una marca
+     *     tags: [Brands]
+     *     parameters:
+     *       - name: id
+     *         in: path
+     *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
+     *     requestBody:
+     *       required: false
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               brandName:
+     *                 type: string
+     *                 example: "Nike"
+     *               description:
+     *                 type: string
+     *                 example: "Marca deportiva internacional"
+     *               active:
+     *                 type: boolean
+     *                 example: true
+     *     responses:
+     *       200:
+     *         description: Marca actualizada parcialmente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Brand'
+     *       404:
+     *         description: Marca no encontrada
+     */
+    router.patch("/:id", async (req, res, next) => {
+        try {
+            const updated = await brandsService.update(req.params.id, req.body);
+            res.json(updated);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    /**
+     * @swagger
+     * /brands/{id}:
      *   delete:
      *     summary: Eliminar una marca
      *     tags: [Brands]

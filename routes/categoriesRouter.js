@@ -185,6 +185,54 @@ module.exports = function (categoriesService, productsService) {
     /**
      * @swagger
      * /categories/{id}:
+     *   patch:
+     *     summary: Actualizar parcialmente una categoría
+     *     tags: [Categories]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
+     *     requestBody:
+     *       required: false
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               categoryName:
+     *                 type: string
+     *                 example: "Electrónicos"
+     *               description:
+     *                 type: string
+     *                 example: "Artículos electrónicos y gadgets"
+     *               active:
+     *                 type: boolean
+     *                 example: true
+     *     responses:
+     *       200:
+     *         description: Categoría actualizada parcialmente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Category'
+     *       404:
+     *         description: Categoría no encontrada
+     */
+    router.patch("/:id", async (req, res, next) => {
+        try {
+            const updated = await categoriesService.update(req.params.id, req.body);
+            res.json(updated);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    /**
+     * @swagger
+     * /categories/{id}:
      *   delete:
      *     summary: Eliminar una categoría
      *     tags: [Categories]

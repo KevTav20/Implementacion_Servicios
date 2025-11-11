@@ -177,6 +177,54 @@ module.exports = function (usersService) {
     /**
      * @swagger
      * /users/{id}:
+     *   patch:
+     *     summary: Actualizar parcialmente un usuario
+     *     tags: [Users]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
+     *     requestBody:
+     *       required: false
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               name:
+     *                 type: string
+     *                 example: "Juan Pérez"
+     *               username:
+     *                 type: string
+     *                 example: "juanperez"
+     *               password:
+     *                 type: string
+     *                 example: "password123"
+     *     responses:
+     *       200:
+     *         description: Usuario actualizado parcialmente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/User'
+     *       404:
+     *         description: Usuario no encontrado
+     */
+    router.patch('/:id', async (req, res, next) => {
+        try {
+            const updated = await usersService.update(req.params.id, req.body);
+            res.json(updated);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    /**
+     * @swagger
+     * /users/{id}:
      *   delete:
      *     summary: Eliminar un usuario
      *     tags: [Users]
