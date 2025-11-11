@@ -20,20 +20,24 @@ module.exports = function (brandsService, productsService) {
      *     Brand:
      *       type: object
      *       properties:
-     *         id:
-     *           type: integer
-     *           example: 1
+     *         _id:
+     *           type: string
+     *           example: "507f1f77bcf86cd799439011"
      *         brandName:
      *           type: string
-     *           example: Nike
+     *           example: "Nike"
      *         description:
      *           type: string
-     *           example: Marca deportiva internacional
+     *           example: "Marca deportiva internacional"
      *         active:
      *           type: boolean
      *           example: true
+     *         createdAt:
+     *           type: string
+     *         updatedAt:
+     *           type: string
      *
-     *     BrandCreate:
+     *     BrandBody:
      *       type: object
      *       required:
      *         - brandName
@@ -41,26 +45,13 @@ module.exports = function (brandsService, productsService) {
      *       properties:
      *         brandName:
      *           type: string
-     *           example: Adidas
+     *           example: "Nike"
      *         description:
      *           type: string
-     *           example: Marca deportiva y de calzado
+     *           example: "Marca deportiva internacional"
      *         active:
      *           type: boolean
      *           example: true
-     *
-     *     BrandUpdate:
-     *       type: object
-     *       properties:
-     *         brandName:
-     *           type: string
-     *           example: Puma
-     *         description:
-     *           type: string
-     *           example: Marca deportiva renovada
-     *         active:
-     *           type: boolean
-     *           example: false
      */
 
     /**
@@ -79,8 +70,13 @@ module.exports = function (brandsService, productsService) {
      *               items:
      *                 $ref: '#/components/schemas/Brand'
      */
-    router.get("/", (req, res) => {
-        res.json(brandsService.getAll());
+    router.get("/", async (req, res, next) => {
+        try {
+            const brands = await brandsService.getAll();
+            res.json(brands);
+        } catch (error) {
+            next(error);
+        }
     });
 
     /**
@@ -94,8 +90,8 @@ module.exports = function (brandsService, productsService) {
      *         in: path
      *         required: true
      *         schema:
-     *           type: integer
-     *         description: ID de la marca
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
      *     responses:
      *       200:
      *         description: Marca encontrada
@@ -106,10 +102,13 @@ module.exports = function (brandsService, productsService) {
      *       404:
      *         description: Marca no encontrada
      */
-    router.get("/:id", (req, res) => {
-        const brand = brandsService.getById(req.params.id);
-        if (!brand) return res.status(404).json({ message: "Marca no encontrada" });
-        res.json(brand);
+    router.get("/:id", async (req, res, next) => {
+        try {
+            const brand = await brandsService.getById(req.params.id);
+            res.json(brand);
+        } catch (error) {
+            next(error);
+        }
     });
 
     /**
@@ -123,7 +122,7 @@ module.exports = function (brandsService, productsService) {
      *       content:
      *         application/json:
      *           schema:
-     *             $ref: '#/components/schemas/BrandCreate'
+     *             $ref: '#/components/schemas/BrandBody'
      *     responses:
      *       201:
      *         description: Marca creada exitosamente
@@ -132,15 +131,13 @@ module.exports = function (brandsService, productsService) {
      *             schema:
      *               $ref: '#/components/schemas/Brand'
      */
-    router.post("/", (req, res) => {
-        const { brandName, description, active } = req.body;
-
-        if (!brandName || !description) {
-            return res.status(400).json({ message: "brandName y description son requeridos" });
+    router.post("/", async (req, res, next) => {
+        try {
+            const newBrand = await brandsService.create(req.body);
+            res.status(201).json(newBrand);
+        } catch (error) {
+            next(error);
         }
-
-        const newBrand = brandsService.create({ brandName, description, active });
-        res.status(201).json(newBrand);
     });
 
     /**
@@ -154,14 +151,14 @@ module.exports = function (brandsService, productsService) {
      *         in: path
      *         required: true
      *         schema:
-     *           type: integer
-     *         description: ID de la marca
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
      *     requestBody:
      *       required: true
      *       content:
      *         application/json:
      *           schema:
-     *             $ref: '#/components/schemas/BrandCreate'
+     *             $ref: '#/components/schemas/BrandBody'
      *     responses:
      *       200:
      *         description: Marca actualizada completamente
@@ -172,46 +169,12 @@ module.exports = function (brandsService, productsService) {
      *       404:
      *         description: Marca no encontrada
      */
-    router.put("/:id", (req, res) => {
+    router.put("/:id", async (req, res, next) => {
         try {
-            const updated = brandsService.updateFull(req.params.id, req.body);
+            const updated = await brandsService.updateFull(req.params.id, req.body);
             res.json(updated);
         } catch (error) {
-            res.status(400).json({ message: error.message });
-        }
-    });
-
-    /**
-     * @swagger
-     * /brands/{id}:
-     *   patch:
-     *     summary: Actualizar parcialmente una marca
-     *     tags: [Brands]
-     *     parameters:
-     *       - name: id
-     *         in: path
-     *         required: true
-     *         schema:
-     *           type: integer
-     *         description: ID de la marca
-     *     requestBody:
-     *       required: false
-     *       content:
-     *         application/json:
-     *           schema:
-     *             $ref: '#/components/schemas/BrandUpdate'
-     *     responses:
-     *       200:
-     *         description: Marca actualizada parcialmente
-     *       404:
-     *         description: Marca no encontrada
-     */
-    router.patch("/:id", (req, res) => {
-        try {
-            const updated = brandsService.update(req.params.id, req.body);
-            res.json(updated);
-        } catch (error) {
-            res.status(404).json({ message: error.message });
+            next(error);
         }
     });
 
@@ -226,8 +189,8 @@ module.exports = function (brandsService, productsService) {
      *         in: path
      *         required: true
      *         schema:
-     *           type: integer
-     *         description: ID de la marca
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
      *     responses:
      *       200:
      *         description: Marca eliminada exitosamente
@@ -236,12 +199,12 @@ module.exports = function (brandsService, productsService) {
      *       404:
      *         description: Marca no encontrada
      */
-    router.delete("/:id", (req, res) => {
+    router.delete("/:id", async (req, res, next) => {
         try {
-            const deleted = brandsService.delete(req.params.id);
+            const deleted = await brandsService.delete(req.params.id);
             res.json({ message: "Marca eliminada", deleted });
         } catch (error) {
-            res.status(400).json({ message: error.message });
+            next(error);
         }
     });
 

@@ -1,13 +1,8 @@
+const Category = require('../models/Category');
+const Product = require('../models/Product');
+
 class CategoriesService {
     constructor() {
-        this.categories = [
-            { id: 1, categoryName: 'Electronics', description: 'Devices, gadgets, and accessories', active: true },
-            { id: 2, categoryName: 'Books', description: 'Printed and digital books', active: true },
-            { id: 3, categoryName: 'Clothing', description: 'Fashion items', active: true },
-            { id: 4, categoryName: 'Sports', description: 'Sports equipment', active: true },
-            { id: 5, categoryName: 'Home & Kitchen', description: 'Home appliances', active: false },
-        ];
-
         this.productsService = null; // se inyecta después
     }
 
@@ -15,72 +10,71 @@ class CategoriesService {
         this.productsService = productsService;
     }
 
-    getAll() {
-        return this.categories;
+    async getAll() {
+        return await Category.find();
     }
 
-    getById(id) {
-        return this.categories.find(c => c.id === parseInt(id));
+    async getById(id) {
+        const category = await Category.findById(id);
+        if (!category) throw new Error("Category Not Found");
+        return category;
     }
 
-    create(data) {
-        const newCategory = {
-            id: this.categories.length + 1,
-            active: true,
-            ...data
-        };
-        this.categories.push(newCategory);
-        return newCategory;
-    }
+    async create(data) {
+        const { categoryName, description, active } = data;
 
-    update(id, changes) {
-        const index = this.categories.findIndex(c => c.id == id);
-        if (index === -1) throw new Error("Category Not Found");
-
-        this.categories[index] = {
-            ...this.categories[index],
-            ...changes
-        };
-
-        return this.categories[index];
-    }
-
-    updateFull(id, data) {
-        const index = this.categories.findIndex(c => c.id == id);
-        if (index === -1) throw new Error("Category Not Found");
-
-        if (!data.categoryName || !data.description) {
+        if (!categoryName || !description) {
             throw new Error("categoryName and description required");
         }
 
-        const updated = {
-            id: parseInt(id),
-            categoryName: data.categoryName,
-            description: data.description,
-            active: data.active ?? true
-        };
+        const newCategory = new Category({
+            categoryName,
+            description,
+            active: active !== undefined ? active : true
+        });
+        
+        return await newCategory.save();
+    }
 
-        this.categories[index] = updated;
+    async update(id, changes) {
+        const category = await Category.findByIdAndUpdate(
+            id,
+            { $set: changes },
+            { new: true, runValidators: true }
+        );
+
+        if (!category) throw new Error("Category Not Found");
+        return category;
+    }
+
+    async updateFull(id, data) {
+        const { categoryName, description, active } = data;
+
+        if (!categoryName || !description) {
+            throw new Error("categoryName and description required");
+        }
+
+        const updated = await Category.findByIdAndUpdate(
+            id,
+            { categoryName, description, active: active !== undefined ? active : true },
+            { new: true, runValidators: true }
+        );
+
+        if (!updated) throw new Error("Category Not Found");
         return updated;
     }
 
-    delete(id) {
-        const categoryId = parseInt(id);
+    async delete(id) {
+        // Verificar si hay productos asociados
+        const hasProducts = await Product.exists({ categoryId: id });
 
-        if (this.productsService) {
-            const hasProducts = this.productsService.products.some(
-                p => p.categoryId === categoryId
-            );
-
-            if (hasProducts) {
-                throw new Error("Cannot delete category because products exist");
-            }
+        if (hasProducts) {
+            throw new Error("Cannot delete category because products exist");
         }
 
-        const index = this.categories.findIndex(c => c.id === categoryId);
-        if (index === -1) throw new Error("Category Not Found");
-
-        return this.categories.splice(index, 1)[0];
+        const deleted = await Category.findByIdAndDelete(id);
+        if (!deleted) throw new Error("Category Not Found");
+        return deleted;
     }
 }
 

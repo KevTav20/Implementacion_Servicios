@@ -1,75 +1,71 @@
-const { faker } = require('@faker-js/faker');
+const User = require('../models/User');
 
 class UsersService {
-    constructor() {
-        this.users = [];
-        this.generate(10);
+    async getAll() {
+        return await User.find();
     }
 
-    generate(limit = 10) {
-        for (let index = 0; index < limit; index++) {
-            this.users.push({
-                id: index + 1,
-                name: faker.person.firstName(),
-                username: faker.internet.username(),
-                password: faker.internet.password(),
-            });
-        }
+    async getById(id) {
+        const user = await User.findById(id);
+        if (!user) throw new Error("User Not Found");
+        return user;
     }
 
-    getAll() {
-        return this.users;
-    }
-
-    getById(id) {
-        return this.users.find(u => u.id === parseInt(id));
-    }
-
-    create(data) {
-        const newUser = {
-            id: this.users.length ? this.users[this.users.length - 1].id + 1 : 1,
-            ...data
-        };
-        this.users.push(newUser);
-        return newUser;
-    }
-
-    update(id, changes) {
-        const index = this.users.findIndex(u => u.id == id);
-        if (index === -1) throw new Error("User Not Found");
-
-        this.users[index] = {
-            ...this.users[index],
-            ...changes
-        };
-        return this.users[index];
-    }
-
-    updateFull(id, data) {
-        const index = this.users.findIndex(u => u.id == id);
-        if (index === -1) throw new Error("User Not Found");
-
-        if (!data.name || !data.username || !data.password) {
+    async create(data) {
+        const { name, username, password } = data;
+        
+        if (!name || !username || !password) {
             throw new Error("name, username y password son requeridos");
         }
 
-        const updated = {
-            id: parseInt(id),
-            name: data.name,
-            username: data.username,
-            password: data.password
-        };
+        // Verificar si el username ya existe
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            throw new Error("Username already exists");
+        }
 
-        this.users[index] = updated;
+        const newUser = new User({ name, username, password });
+        return await newUser.save();
+    }
+
+    async update(id, changes) {
+        const user = await User.findByIdAndUpdate(
+            id,
+            { $set: changes },
+            { new: true, runValidators: true }
+        );
+        
+        if (!user) throw new Error("User Not Found");
+        return user;
+    }
+
+    async updateFull(id, data) {
+        const { name, username, password } = data;
+
+        if (!name || !username || !password) {
+            throw new Error("name, username y password son requeridos");
+        }
+
+        // Verificar si el username ya existe en otro usuario
+        const existingUser = await User.findOne({ username, _id: { $ne: id } });
+        if (existingUser) {
+            throw new Error("Username already exists");
+        }
+
+        const updated = await User.findByIdAndUpdate(
+            id,
+            { name, username, password },
+            { new: true, runValidators: true }
+        );
+
+        if (!updated) throw new Error("User Not Found");
         return updated;
     }
 
-    delete(id) {
-        const index = this.users.findIndex(u => u.id == id);
-        if (index === -1) throw new Error("User Not Found");
-
-        const deleted = this.users.splice(index, 1);
-        return deleted[0];
+    async delete(id) {
+        const deleted = await User.findByIdAndDelete(id);
+        if (!deleted) throw new Error("User Not Found");
+        return deleted;
     }
 }
 

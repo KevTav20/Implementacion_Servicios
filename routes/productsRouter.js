@@ -14,69 +14,68 @@ module.exports = function (productsService) {
      * @swagger
      * components:
      *   schemas:
-     *
      *     Product:
      *       type: object
      *       properties:
-     *         id:
-     *           type: integer
+     *         _id:
+     *           type: string
+     *           example: "507f1f77bcf86cd799439011"
      *         productName:
      *           type: string
+     *           example: "Laptop Dell XPS 15"
      *         description:
      *           type: string
+     *           example: "Laptop de alto rendimiento con pantalla 4K"
      *         price:
      *           type: number
+     *           example: 1299.99
      *         image:
      *           type: string
+     *           example: "https://example.com/image.jpg"
      *         stock:
      *           type: integer
+     *           example: 50
      *         categoryId:
-     *           type: integer
+     *           type: string
+     *           example: "507f1f77bcf86cd799439012"
      *         brandId:
-     *           type: integer
+     *           type: string
+     *           example: "507f1f77bcf86cd799439013"
+     *         createdAt:
+     *           type: string
+     *         updatedAt:
+     *           type: string
      *
-     *     ProductCreate:
+     *     ProductBody:
      *       type: object
      *       required:
      *         - productName
      *         - description
      *         - price
-     *         - stock
      *         - categoryId
      *         - brandId
      *       properties:
      *         productName:
      *           type: string
+     *           example: "Laptop Dell XPS 15"
      *         description:
      *           type: string
+     *           example: "Laptop de alto rendimiento"
      *         price:
      *           type: number
+     *           example: 1299.99
      *         image:
      *           type: string
+     *           example: "https://example.com/image.jpg"
      *         stock:
      *           type: integer
+     *           example: 50
      *         categoryId:
-     *           type: integer
+     *           type: string
+     *           example: "507f1f77bcf86cd799439012"
      *         brandId:
-     *           type: integer
-     *
-     *     ProductUpdate:
-     *       type: object
-     *       properties:
-     *         productName:
      *           type: string
-     *         description:
-     *           type: string
-     *         price:
-     *           type: number
-     *         image:
-     *           type: string
-     *         stock:
-     *           type: integer
-     *         categoryId:
-     *           type: integer
-     *         brandId:
-     *           type: integer
+     *           example: "507f1f77bcf86cd799439013"
      */
 
     // GET all products
@@ -117,10 +116,15 @@ module.exports = function (productsService) {
      *         in: path
      *         required: true
      *         schema:
-     *           type: integer
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
      *     responses:
      *       200:
      *         description: Producto encontrado
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Product'
      *       404:
      *         description: Producto no encontrado
      */
@@ -128,66 +132,6 @@ module.exports = function (productsService) {
         try {
             const product = await productsService.getById(req.params.id);
             res.json(product);
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    // GET products by category
-    /**
-     * @swagger
-     * /products/categories/{categoryId}:
-     *   get:
-     *     summary: Obtener productos por categoría
-     *     tags: [Products]
-     *     parameters:
-     *       - name: categoryId
-     *         in: path
-     *         required: true
-     *         schema:
-     *           type: integer
-     *     responses:
-     *       200:
-     *         description: Productos encontrados
-     *       404:
-     *         description: No hay productos en esta categoría
-     */
-    router.get("/categories/:categoryId", async (req, res, next) => {
-        try {
-            const products = await productsService.getByCategory(req.params.categoryId);
-            if (!products.length)
-                return res.status(404).json({ message: "No hay productos en esta categoría" });
-            res.json(products);
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    // GET products by brand
-    /**
-     * @swagger
-     * /products/brands/{brandId}:
-     *   get:
-     *     summary: Obtener productos por marca
-     *     tags: [Products]
-     *     parameters:
-     *       - name: brandId
-     *         in: path
-     *         required: true
-     *         schema:
-     *           type: integer
-     *     responses:
-     *       200:
-     *         description: Productos encontrados
-     *       404:
-     *         description: No hay productos con esta marca
-     */
-    router.get("/brands/:brandId", async (req, res, next) => {
-        try {
-            const products = await productsService.getByBrand(req.params.brandId);
-            if (!products.length)
-                return res.status(404).json({ message: "No hay productos con esta marca" });
-            res.json(products);
         } catch (error) {
             next(error);
         }
@@ -205,10 +149,14 @@ module.exports = function (productsService) {
      *       content:
      *         application/json:
      *           schema:
-     *             $ref: '#/components/schemas/ProductCreate'
+     *             $ref: '#/components/schemas/ProductBody'
      *     responses:
      *       201:
      *         description: Producto creado exitosamente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Product'
      */
     router.post("/", async (req, res, next) => {
         try {
@@ -230,47 +178,24 @@ module.exports = function (productsService) {
      *       - name: id
      *         in: path
      *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
      *     requestBody:
      *       required: true
      *       content:
      *         application/json:
      *           schema:
-     *             $ref: '#/components/schemas/ProductCreate'
+     *             $ref: '#/components/schemas/ProductBody'
      *     responses:
      *       200:
      *         description: Producto actualizado
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Product'
      */
     router.put("/:id", async (req, res, next) => {
-        try {
-            const updated = await productsService.update(req.params.id, req.body);
-            res.json(updated);
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    // PATCH partial update
-    /**
-     * @swagger
-     * /products/{id}:
-     *   patch:
-     *     summary: Actualizar parcialmente un producto
-     *     tags: [Products]
-     *     parameters:
-     *       - name: id
-     *         in: path
-     *         required: true
-     *     requestBody:
-     *       required: false
-     *       content:
-     *         application/json:
-     *           schema:
-     *             $ref: '#/components/schemas/ProductUpdate'
-     *     responses:
-     *       200:
-     *         description: Producto actualizado parcialmente
-     */
-    router.patch("/:id", async (req, res, next) => {
         try {
             const updated = await productsService.update(req.params.id, req.body);
             res.json(updated);
@@ -290,6 +215,9 @@ module.exports = function (productsService) {
      *       - name: id
      *         in: path
      *         required: true
+     *         schema:
+     *           type: string
+     *         example: "507f1f77bcf86cd799439011"
      *     responses:
      *       200:
      *         description: Producto eliminado

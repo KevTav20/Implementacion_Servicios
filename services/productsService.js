@@ -1,45 +1,35 @@
+const Product = require('../models/Product');
 const { faker } = require("@faker-js/faker");
 
 class ProductsService {
     constructor(brandsService, categoriesService) {
         this.brandsService = brandsService;
         this.categoriesService = categoriesService;
-
-        this.products = [];
-        this.generate();
-    }
-
-    generate() {
-        for (let i = 1; i <= 20; i++) {
-            this.products.push({
-                id: i,
-                productName: faker.commerce.productName(),
-                description: faker.commerce.productDescription(),
-                price: parseFloat(faker.commerce.price()),
-                image: faker.image.url(),
-                stock: faker.number.int({ min: 0, max: 100 }),
-                categoryId: faker.number.int({ min: 1, max: 5 }),
-                brandId: faker.number.int({ min: 1, max: 5 }),
-            });
-        }
     }
 
     async getAll() {
-        return this.products;
+        return await Product.find().populate('categoryId', 'categoryName description').populate('brandId', 'brandName description');
     }
 
     async getById(id) {
-        const product = this.products.find(p => p.id === parseInt(id));
+        const product = await Product.findById(id)
+            .populate('categoryId', 'categoryName description')
+            .populate('brandId', 'brandName description');
+        
         if (!product) throw new Error("Product Not Found");
         return product;
     }
 
     async getByCategory(categoryId) {
-        return this.products.filter(p => p.categoryId === parseInt(categoryId));
+        return await Product.find({ categoryId })
+            .populate('categoryId', 'categoryName description')
+            .populate('brandId', 'brandName description');
     }
 
     async getByBrand(brandId) {
-        return this.products.filter(p => p.brandId === parseInt(brandId));
+        return await Product.find({ brandId })
+            .populate('categoryId', 'categoryName description')
+            .populate('brandId', 'brandName description');
     }
 
     async create(data) {
@@ -57,12 +47,8 @@ class ProductsService {
         }
 
         // Validar existencia de brand y category
-        const brandExists = this.brandsService.getById(brandId);
-        const categoryExists = this.categoriesService.getById(categoryId);
-
-        if (!brandExists && !categoryExists) {
-            throw new Error("Brand and Category do not exist");
-        }
+        const brandExists = await this.brandsService.getById(brandId);
+        const categoryExists = await this.categoriesService.getById(categoryId);
 
         if (!brandExists) {
             throw new Error("Brand does not exist");
@@ -72,8 +58,7 @@ class ProductsService {
             throw new Error("Category does not exist");
         }
 
-        const newProduct = {
-            id: this.products.length + 1,
+        const newProduct = new Product({
             productName,
             description,
             price,
@@ -81,43 +66,40 @@ class ProductsService {
             stock: stock === undefined ? faker.number.int({ min: 0, max: 50 }) : stock,
             categoryId,
             brandId,
-        };
+        });
 
-        this.products.push(newProduct);
-        return newProduct;
+        return await newProduct.save();
     }
 
     async update(id, changes) {
-        const index = this.products.findIndex(p => p.id === parseInt(id));
-        if (index === -1) throw new Error("Product Not Found");
-
         // Validar cambios de brand
         if (changes.brandId !== undefined) {
-            const brand = this.brandsService.getById(changes.brandId);
+            const brand = await this.brandsService.getById(changes.brandId);
             if (!brand) throw new Error("Brand does not exist");
         }
 
         // Validar cambios de categoría
         if (changes.categoryId !== undefined) {
-            const category = this.categoriesService.getById(changes.categoryId);
+            const category = await this.categoriesService.getById(changes.categoryId);
             if (!category) throw new Error("Category does not exist");
         }
 
-        const updated = {
-            ...this.products[index],
-            ...changes,
-        };
+        const updated = await Product.findByIdAndUpdate(
+            id,
+            { $set: changes },
+            { new: true, runValidators: true }
+        )
+        .populate('categoryId', 'categoryName description')
+        .populate('brandId', 'brandName description');
 
-        this.products[index] = updated;
+        if (!updated) throw new Error("Product Not Found");
         return updated;
     }
 
     async delete(id) {
-        const index = this.products.findIndex(p => p.id === parseInt(id));
-        if (index === -1) throw new Error("Product Not Found");
-
-        this.products.splice(index, 1);
-        return { id };
+        const deleted = await Product.findByIdAndDelete(id);
+        if (!deleted) throw new Error("Product Not Found");
+        return deleted;
     }
 }
 
